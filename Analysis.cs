@@ -20,6 +20,10 @@ namespace ExternalSQL.Net
         {
             string path = "";
             NameValueCollection config = (NameValueCollection)ConfigurationSettings.GetConfig("sqlPaths");
+            if (config == null)
+            {
+                throw new Exception("未在config中找到sqlPaths");
+            }
             foreach (var key in config.AllKeys)
             {
                 if (pathName == key)
@@ -79,7 +83,6 @@ namespace ExternalSQL.Net
                 paraTemp.Add(item.InnerText);
                 sql = sql.Replace("<parameter>" + item.InnerText + "</parameter>", "");
             }
-            logWriter.WriteLog(sql, paras);
             SqlCommand cmd = new SqlCommand(sql, con);
             foreach (var item in paraTemp)
             {

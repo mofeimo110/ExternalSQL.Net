@@ -41,10 +41,11 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analysis.cs" />
-    <Compile Include="logWriter.cs" />
+    <Compile Include="common\LogType.cs" />
+    <Compile Include="LogWriter.cs" />
     <Compile Include="PathHandler.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="SqlHelper.cs" />
+    <Compile Include="SqlServerHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <WCFMetadata Include="Service References\" />
