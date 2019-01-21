@@ -10,6 +10,12 @@ namespace ExternalSQL.Net
 {
     public static class Analysis
     {
+        /// <summary>
+        /// 通过基本配置获取XML对象
+        /// </summary>
+        /// <param name="pathName">准备使用的路径在config中配置的key</param>
+        /// <param name="docName">加载的xml文件名，无后缀</param>
+        /// <returns></returns>
         public static XmlDocument GetXmLdoc(string pathName, string docName)
         {
             string path = "";
@@ -26,6 +32,11 @@ namespace ExternalSQL.Net
             xml.Load(System.Threading.Thread.GetDomain().BaseDirectory + path);
             return xml;
         }
+        /// <summary>
+        /// 传入XmlDocument对象获取文件中所有XmlNode
+        /// </summary>
+        /// <param name="xml">xml对象</param>
+        /// <returns></returns>
         public static XmlNodeList GetNodesByXml(XmlDocument xml)
         {
             XmlNode root = xml.SelectSingleNode("/root");
@@ -46,7 +57,16 @@ namespace ExternalSQL.Net
             }
             return sqllist;
         }
-
+        /// <summary>
+        /// 根据返回参数化的SQLcommand
+        /// </summary>
+        /// <param name="id">sql语句的ID</param>
+        /// <param name="nodelist">xml文件中所有的XmlNode</param>
+        /// <param name="paras">调用时传入的参数键值对</param>
+        /// <param name="pathName">准备使用的路径在config中配置的key</param>
+        /// <param name="docName">加载的xml文件名，无后缀</param>
+        /// <param name="con">SqlConnection</param>
+        /// <returns></returns>
         public static SqlCommand GetCommandByNode(string id, XmlNodeList nodelist, object paras, string pathName, string docName, SqlConnection con)
         {
             string sql = GetSqlByNode(id, nodelist, paras, pathName, docName, con);
@@ -59,7 +79,7 @@ namespace ExternalSQL.Net
                 paraTemp.Add(item.InnerText);
                 sql = sql.Replace("<parameter>" + item.InnerText + "</parameter>", "");
             }
-            logWriter.WriteLog(sql,paras);
+            logWriter.WriteLog(sql, paras);
             SqlCommand cmd = new SqlCommand(sql, con);
             foreach (var item in paraTemp)
             {
@@ -70,7 +90,12 @@ namespace ExternalSQL.Net
             }
             return cmd;
         }
-
+        /// <summary>
+        /// 获取匿名对象的某个属性的值
+        /// </summary>
+        /// <param name="paras"></param>
+        /// <param name="attrName">属性Name</param>
+        /// <returns></returns>
         public static object GetAttrValue(this object paras, string attrName)
         {
             if (paras.GetType().GetProperty(attrName) != null)
@@ -82,6 +107,16 @@ namespace ExternalSQL.Net
                 return null;
             }
         }
+        /// <summary>
+        /// 返回指定的sql节点生成的sql语句
+        /// </summary>
+        /// <param name="id">节点id</param>
+        /// <param name="nodelist">包含指定XmlNode的集合</param>
+        /// <param name="paras">传入的参数键值对</param>
+        /// <param name="pathName">准备使用的路径在config中配置的key</param>
+        /// <param name="docName">加载的xml文件名，无后缀</param>
+        /// <param name="con">SqlConnection</param>
+        /// <returns></returns>
         public static string GetSqlByNode(string id, XmlNodeList nodelist, object paras, string pathName, string docName, SqlConnection con)
         {
             string retSql = "";
@@ -94,7 +129,14 @@ namespace ExternalSQL.Net
             }
             return retSql;
         }
-
+        /// <summary>
+        /// 根据sql节点中的parameter整理语句
+        /// </summary>
+        /// <param name="sql">已生成的sql</param>
+        /// <param name="node">指定的sql节点</param>
+        /// <param name="paras">传入的参数键值对</param>
+        /// <param name="con">SqlConnection</param>
+        /// <returns></returns>
         public static string AddSqlPara(this string sql, XmlNode node, object paras, SqlConnection con)
         {
             if (node.HasChildNodes)
@@ -131,7 +173,16 @@ namespace ExternalSQL.Net
             }
             return sql;
         }
-
+        /// <summary>
+        /// 根据sql节点中的include整理语句
+        /// </summary>
+        /// <param name="sql">已生成的sql</param>
+        /// <param name="node">指定的sql节点</param>
+        /// <param name="paras">传入的参数键值对</param>
+        /// <param name="pathName">准备使用的路径在config中配置的key</param>
+        /// <param name="docName">加载的xml文件名，无后缀</param>
+        /// <param name="con">SqlConnection</param>
+        /// <returns></returns>
         public static string AddSqlInclude(this string sql, XmlNode node, object paras, string pathName, string docName, SqlConnection con)
         {
             if (node.HasChildNodes)
@@ -165,12 +216,24 @@ namespace ExternalSQL.Net
 
             return sql;
         }
-
+        /// <summary>
+        /// XmlNode对象的某个属性的值 是否存在或者是否不为空
+        /// </summary>
+        /// <param name="node">XmlNode</param>
+        /// <param name="attrName">属性Name</param>
+        /// <returns></returns>
         public static bool AttributesIsNull(this XmlNode node, string attrName)
         {
             return node.Attributes[attrName] == null || node.Attributes[attrName].Value == "";
         }
-
+        /// <summary>
+        /// parameter节点中包含了多了parameter时，分别解析
+        /// </summary>
+        /// <param name="node">XmlNode</param>
+        /// <param name="sql">sql语句</param>
+        /// <param name="sqlParas">当前语句所需要的parameter集合</param>
+        /// <param name="paras">传入的参数键值对</param>
+        /// <returns></returns>
         public static string MultipleParas(this XmlNode node, string sql, List<string> sqlParas, object paras)
         {
             string[] parameters = node.InnerText.Split(new[] { ',' }, StringSplitOptions.RemoveEmptyEntries);
