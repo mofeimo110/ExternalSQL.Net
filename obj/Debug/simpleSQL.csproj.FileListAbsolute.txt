@@ -1,0 +1,4 @@
+C:\Users\Coder\documents\visual studio 2013\Projects\simpleSQL\simpleSQL\bin\Debug\simpleSQL.dll
+C:\Users\Coder\documents\visual studio 2013\Projects\simpleSQL\simpleSQL\bin\Debug\simpleSQL.pdb
+C:\Users\Coder\documents\visual studio 2013\Projects\simpleSQL\simpleSQL\obj\Debug\simpleSQL.dll
+C:\Users\Coder\documents\visual studio 2013\Projects\simpleSQL\simpleSQL\obj\Debug\simpleSQL.pdb
