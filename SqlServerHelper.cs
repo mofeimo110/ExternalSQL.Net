@@ -26,6 +26,7 @@ namespace ExternalSQL.Net
         /// <returns></returns>
         public static DataTable SimpleQuery(string pathName, string docName, string sqlId, object paras, string conStr)
         {
+            //todo 建库，整合语句，测试语句，日志写入
             SqlConnection sqlCnt = new SqlConnection(conStr);
             sqlCnt.Open();
             try
