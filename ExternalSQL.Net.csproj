@@ -41,6 +41,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="Analysis.cs" />
+    <Compile Include="common\LogModel.cs" />
     <Compile Include="common\LogType.cs" />
     <Compile Include="LogWriter.cs" />
     <Compile Include="PathHandler.cs" />

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.IO;
+using System.Text.RegularExpressions;
 using ExternalSQL.Net.common;
 
 namespace ExternalSQL.Net
@@ -11,26 +12,27 @@ namespace ExternalSQL.Net
         /// <summary>
         /// 写入日志
         /// </summary>
-        /// <param name="logType">枚举：日志类型</param>
-        /// <param name="logTxt">写入内容</param>
-        public static void WriteLog(LogType logType, string logTxt)
+        public static void WriteLog(LogModel lm)
         {
-            string dir = System.Threading.Thread.GetDomain().BaseDirectory + "logs\\" + logType;
-            if (!Directory.Exists(dir))
+            foreach (LogType type in Enum.GetValues(typeof(LogType)))
             {
-                //不存在时创建路径和文件
-                Directory.CreateDirectory(dir);
+                if (!Directory.Exists(System.Threading.Thread.GetDomain().BaseDirectory + "logs\\" + type))
+                {
+                    //不存在时创建路径和文件
+                    Directory.CreateDirectory(System.Threading.Thread.GetDomain().BaseDirectory + "logs\\" + type);
+                }
             }
+            string dir = System.Threading.Thread.GetDomain().BaseDirectory + "logs\\" + lm.LogType;
             //删除日志
             DeletePassLogs();
             //写入日志
             string filePath = dir + "\\" + GetLogName(dir);
             var fm = !File.Exists(filePath) ? FileMode.Create : FileMode.Append;
             FileStream fs = new FileStream(filePath, fm);
-            StreamWriter wr = null;
-            wr = new StreamWriter(fs);
-            string logStr = "[" + DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss:ms") + "]:";
-            wr.WriteLine(logStr + logTxt);
+            var wr = new StreamWriter(fs);
+            string logStr = "[" + lm.WriteTime.ToString("yyyy-MM-dd HH:mm:ss:ms") + "]:";
+
+            wr.WriteLine((logStr + lm.LogText).Replace("\n", "\n         "));
             wr.Close();
         }
         /// <summary>
@@ -71,7 +73,7 @@ namespace ExternalSQL.Net
         /// <param name="logTxt">日志内容</param>
         public static void ErrorLog(string logTxt)
         {
-            WriteLog(LogType.Error, logTxt);
+            WriteLog(new LogModel { LogType = LogType.Error, LogText = logTxt, WriteTime = DateTime.Now });
         }
         /// <summary>
         /// 写入常规日志
@@ -79,7 +81,15 @@ namespace ExternalSQL.Net
         /// <param name="logTxt">日志内容</param>
         public static void InfoLog(string logTxt)
         {
-            WriteLog(LogType.Info, logTxt);
+            WriteLog(new LogModel { LogType = LogType.Info, LogText = logTxt, WriteTime = DateTime.Now });
+        }
+        /// <summary>
+        /// 写入警告日志
+        /// </summary>
+        /// <param name="logTxt">日志内容</param>
+        public static void WarningLog(string logTxt)
+        {
+            WriteLog(new LogModel { LogType = LogType.Warning, LogText = logTxt, WriteTime = DateTime.Now });
         }
         /// <summary>
         /// 删除超期日志
@@ -89,18 +99,11 @@ namespace ExternalSQL.Net
         {
             string path = System.Threading.Thread.GetDomain().BaseDirectory + "logs\\";
             //获取文件夹中的文件集合
-            FileInfo[] infoLogs = new DirectoryInfo(path + LogType.Info).GetFiles();
-            FileInfo[] errorLogs = new DirectoryInfo(path + LogType.Error).GetFiles();
-
-            int max = infoLogs.Length > errorLogs.Length ? infoLogs.Length : errorLogs.Length;
             int toDelete = int.Parse(DateTime.Now.AddDays(7 * -1).ToString("yyyyMMdd"));
-            for (int i = 0; i < max; i++)
+            foreach (LogType type in Enum.GetValues(typeof(LogType)))
             {
-                foreach (FileInfo file in infoLogs)
-                {
-                    DoDelete(file, toDelete);
-                }
-                foreach (FileInfo file in errorLogs)
+                FileInfo[] files = new DirectoryInfo(path + type).GetFiles();
+                foreach (var file in files)
                 {
                     DoDelete(file, toDelete);
                 }
@@ -113,17 +116,15 @@ namespace ExternalSQL.Net
         /// <param name="toDelete">可删除时间线</param>
         public static void DoDelete(FileInfo file, int toDelete)
         {
-            try
+            //全字匹配20190101-0.txt格式的文件名
+            MatchCollection matches = Regex.Matches(file.Name, @"^(\d{8})-(\d{1,10})\.txt$");
+            if (matches.Count > 0)
             {
                 int logDate = int.Parse(file.Name.Split(new[] { '-' }, StringSplitOptions.RemoveEmptyEntries)[0]);
                 if (logDate <= toDelete)
                 {
                     file.Delete();
                 }
-            }
-            catch (Exception e)
-            {
-                throw;
             }
         }
     }

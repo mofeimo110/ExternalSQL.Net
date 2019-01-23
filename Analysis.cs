@@ -5,6 +5,7 @@ using System.Configuration;
 using System.Data.SqlClient;
 using System.Linq;
 using System.Xml;
+using ExternalSQL.Net.common;
 
 namespace ExternalSQL.Net
 {
@@ -103,6 +104,7 @@ namespace ExternalSQL.Net
 
             List<string> paraTemp;
             string sql = GetSqlByNode(sqlId, nodelist, paras, pathName, docName, out paraTemp);
+            LogWriter.InfoLog(sql + "\n parameters=" + paras);
             SqlCommand cmd = new SqlCommand(sql, con);
             foreach (var item in paraTemp)
             {
@@ -283,7 +285,6 @@ namespace ExternalSQL.Net
                     }
                 }
             }
-
             return sql.Replace("<parameter>" + node.InnerText + "</parameter>", newpara);
         }
     }

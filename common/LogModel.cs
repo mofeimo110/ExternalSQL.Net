@@ -6,10 +6,10 @@ using System.Threading.Tasks;
 
 namespace ExternalSQL.Net.common
 {
-    public enum LogType
+    public class LogModel
     {
-        Error,
-        Warning,
-        Info
+        public LogType LogType { get; set; }
+        public string LogText { get; set; }
+        public DateTime WriteTime { get; set; }
     }
 }
