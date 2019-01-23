@@ -7,7 +7,7 @@
     &nbsp;&nbsp;&nbsp;&nbsp;&lt;section name="sqlPaths" type="ExternalSQL.Net.PathHandler" /><br/>
 三、在config根节点<configuration>中添加<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&lt;sqlPaths><br/>
-       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;add key="sqlserver" value="SQLS"></add><br/>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;add key="sqlserver" value="SQLS" /><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&lt;/sqlPaths><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;<sqlPaths>名称不可更改，key为保存sql语句的xml的路径的主键，value为保存sql语句的xml的路径，可配置多个<br/>
 四、在相应路径中新增xml文件，根节点为root<br/>
@@ -17,14 +17,14 @@
        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;where e.username=#username#<br/>
        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and e.userpassword=@userpassword<br/>
        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and e.countup=$countup$<br/>
-       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;include target="getuserparas"></include><br/>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;include target="getuserparas" /><br/>
        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and userid='110'<br/>
-       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;parameter>username,userpassword</parameter><br/>
-       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;parameter>countup</parameter><br/>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;parameter>username,userpassword&lt;/parameter><br/>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;parameter>countup&lt;/parameter><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&lt;/sql><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&lt;sql id="getuserparas"><br/>
        &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;and customid=@customid<br/>
-       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<parameter>customid</parameter><br/>
+       &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&lt;parameter>customid&lt;/parameter><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;&lt;/sql><br/>
     &nbsp;&nbsp;&nbsp;&nbsp;一个sql节点表示一个sql语句。<br/>
     &nbsp;&nbsp;&nbsp;&nbsp;##在生成时会替换成''。<br/>
