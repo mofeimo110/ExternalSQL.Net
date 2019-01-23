@@ -1,20 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
 using System.Data.SqlClient;
 using System.Xml;
+using System.Linq;
 
 namespace ExternalSQL.Net
 {
     public class SqlServerHelper
     {
-        public static SqlCommand GetSqlText(string pathName, string docName, string sqlId, object paras, SqlConnection con)
-        {
-            XmlDocument xml = Analysis.GetXmLdoc("sqlserver", "sql1");
-            XmlNodeList sqllist = Analysis.GetNodesByXml(xml);
-            //string sql = Analysis.GetSqlByNode(sqlId, sqllist,paras,pathName,docName);
-            return Analysis.GetCommandByNode(sqlId, sqllist, paras, pathName, docName, con);
-        }
         /// <summary>
         /// 检查select查询，xml节点中只存在select逻辑时调用
         /// </summary>
@@ -32,20 +27,20 @@ namespace ExternalSQL.Net
             try
             {
                 XmlDocument xml = Analysis.GetXmLdoc("sqlserver", "sql1");
-                XmlNodeList sqllist = Analysis.GetNodesByXml(xml);
-                SqlCommand cmd = Analysis.GetCommandByNode(sqlId, sqllist, paras, pathName, docName, sqlCnt);
+                XmlNodeList nodelist = Analysis.GetNodesByXml(xml);
+                SqlCommand cmd = Analysis.GetCommand(sqlId, nodelist, paras, pathName, docName, sqlCnt);
                 SqlDataReader dr = cmd.ExecuteReader();
                 DataTable dt = new DataTable();
                 dt.Load(dr);
+                sqlCnt.Close();
                 return dt;
             }
             catch (Exception ex)
             {
                 sqlCnt.Close();
-
                 return null;
             }
-            
+
         }
         /// <summary>
         /// 根据name获取数据库连接字符串

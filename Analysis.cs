@@ -49,18 +49,30 @@ namespace ExternalSQL.Net
             {
                 sqllist = root.SelectNodes("sql");
                 List<string> ids = new List<string>();
-                foreach (XmlNode item in sqllist)
+                if (sqllist != null)
                 {
-                    ids.Add(item.Attributes["id"].Value);
+                    foreach (XmlNode item in sqllist)
+                    {
+                        if (item.Attributes != null)
+                        {
+                            ids.Add(item.Attributes["id"].Value);
+                        }
+                    }
+
+                    //如果一个文件中出现重复id则返回空
+                    if (ids.Count != ids.Distinct().Count())
+                    {
+                        throw new Exception("xml文件中sql节点存在重复id");
+                    }
                 }
-                //如果一个文件中出现重复id则返回空
-                if (ids.Count != ids.Distinct().Count())
+                else
                 {
-                    sqllist = null;
+                    throw new Exception("xml文件中未找到sql节点");
                 }
             }
             return sqllist;
         }
+
         /// <summary>
         /// 根据返回参数化的SQLcommand
         /// </summary>
@@ -69,20 +81,28 @@ namespace ExternalSQL.Net
         /// <param name="paras">调用时传入的参数键值对</param>
         /// <param name="pathName">准备使用的路径在config中配置的key</param>
         /// <param name="docName">加载的xml文件名，无后缀</param>
-        /// <param name="con">SqlConnection</param>
+        /// <param name="paraTemp">需要添加进command的数据对象</param>
         /// <returns></returns>
-        public static SqlCommand GetCommandByNode(string id, XmlNodeList nodelist, object paras, string pathName, string docName, SqlConnection con)
+        public static string GetSqlByNode(string id, XmlNodeList nodelist, object paras, string pathName, string docName, out List<string> paraTemp)
         {
-            string sql = GetSqlByNode(id, nodelist, paras, pathName, docName, con);
+            string sql = GetSqlByNode(id, nodelist, paras, pathName, docName);
             XmlDocument xml = new XmlDocument();
             xml.LoadXml("<sql>" + sql + "</sql>");
             XmlNodeList parasBySql = xml.SelectSingleNode("sql").SelectNodes("parameter");
-            List<string> paraTemp = new List<string>();
+            paraTemp = new List<string>();
             foreach (XmlNode item in parasBySql)
             {
                 paraTemp.Add(item.InnerText);
                 sql = sql.Replace("<parameter>" + item.InnerText + "</parameter>", "");
             }
+            return sql;
+        }
+
+        public static SqlCommand GetCommand(string sqlId, XmlNodeList nodelist, object paras, string pathName, string docName, SqlConnection con)
+        {
+
+            List<string> paraTemp;
+            string sql = GetSqlByNode(sqlId, nodelist, paras, pathName, docName, out paraTemp);
             SqlCommand cmd = new SqlCommand(sql, con);
             foreach (var item in paraTemp)
             {
@@ -103,6 +123,7 @@ namespace ExternalSQL.Net
         {
             if (paras.GetType().GetProperty(attrName) != null)
             {
+                // ReSharper disable once PossibleNullReferenceException
                 return paras.GetType().GetProperty(attrName).GetValue(paras);
             }
             else
@@ -110,6 +131,7 @@ namespace ExternalSQL.Net
                 return null;
             }
         }
+
         /// <summary>
         /// 返回指定的sql节点生成的sql语句
         /// </summary>
@@ -118,29 +140,28 @@ namespace ExternalSQL.Net
         /// <param name="paras">传入的参数键值对</param>
         /// <param name="pathName">准备使用的路径在config中配置的key</param>
         /// <param name="docName">加载的xml文件名，无后缀</param>
-        /// <param name="con">SqlConnection</param>
         /// <returns></returns>
-        public static string GetSqlByNode(string id, XmlNodeList nodelist, object paras, string pathName, string docName, SqlConnection con)
+        public static string GetSqlByNode(string id, XmlNodeList nodelist, object paras, string pathName, string docName)
         {
             string retSql = "";
             foreach (XmlNode item in nodelist)
             {
-                if (item.Attributes["id"].Value == id)
+                if (item.Attributes != null && item.Attributes["id"].Value == id)
                 {
-                    retSql = item.InnerXml.AddSqlPara(item, paras, con).AddSqlInclude(item, paras, pathName, docName, con);
+                    retSql = item.InnerXml.AddSqlPara(item, paras).AddSqlInclude(item, paras, pathName, docName);
                 }
             }
             return retSql;
         }
+
         /// <summary>
         /// 根据sql节点中的parameter整理语句
         /// </summary>
         /// <param name="sql">已生成的sql</param>
         /// <param name="node">指定的sql节点</param>
         /// <param name="paras">传入的参数键值对</param>
-        /// <param name="con">SqlConnection</param>
         /// <returns></returns>
-        public static string AddSqlPara(this string sql, XmlNode node, object paras, SqlConnection con)
+        public static string AddSqlPara(this string sql, XmlNode node, object paras)
         {
             if (node.HasChildNodes)
             {
@@ -163,7 +184,8 @@ namespace ExternalSQL.Net
                                 if (para == p.Name)
                                 {
                                     sqlParas.Remove(p.Name);
-                                    sql = sql.Replace("$" + para + "$", "'" + p.GetValue(paras) + "'");
+                                    sql = sql.Replace("$" + para + "$", p.GetValue(paras) + "");
+                                    sql = sql.Replace("#" + para + "#", "'" + p.GetValue(paras) + "'");
                                 }
                             }
                         }
@@ -171,11 +193,13 @@ namespace ExternalSQL.Net
                 }
                 foreach (var para in sqlParas)
                 {
-                    sql = sql.Replace("$" + para + "$", "''");
+                    sql = sql.Replace("$" + para + "$", "");
+                    sql = sql.Replace("#" + para + "#", "''");
                 }
             }
             return sql;
         }
+
         /// <summary>
         /// 根据sql节点中的include整理语句
         /// </summary>
@@ -184,9 +208,8 @@ namespace ExternalSQL.Net
         /// <param name="paras">传入的参数键值对</param>
         /// <param name="pathName">准备使用的路径在config中配置的key</param>
         /// <param name="docName">加载的xml文件名，无后缀</param>
-        /// <param name="con">SqlConnection</param>
         /// <returns></returns>
-        public static string AddSqlInclude(this string sql, XmlNode node, object paras, string pathName, string docName, SqlConnection con)
+        public static string AddSqlInclude(this string sql, XmlNode node, object paras, string pathName, string docName)
         {
             if (node.HasChildNodes)
             {
@@ -194,7 +217,6 @@ namespace ExternalSQL.Net
                 {
                     if (item.Name == "include")
                     {
-                        XmlDocument xml = new XmlDocument();
                         if (item.AttributesIsNull("pathName") && item.AttributesIsNull("docName"))
                         {
                             //默认寻找路径为当前文件
@@ -202,17 +224,23 @@ namespace ExternalSQL.Net
                         else if (item.AttributesIsNull("pathName") && !item.AttributesIsNull("docName"))
                         {
                             //路径默认为当前路径，文件指向文件更换
-                            docName = item.Attributes["docName"].Value;
+                            if (item.Attributes != null) docName = item.Attributes["docName"].Value;
                         }
                         else
                         {
                             //完全根据配置的path和docName查找文件
-                            pathName = item.Attributes["pathName"].Value;
-                            docName = item.Attributes["docName"].Value;
+                            if (item.Attributes != null)
+                            {
+                                pathName = item.Attributes["pathName"].Value;
+                                docName = item.Attributes["docName"].Value;
+                            }
                         }
-                        xml = GetXmLdoc(pathName, docName);
-                        string includeSql = GetSqlByNode(item.Attributes["target"].Value, GetNodesByXml(xml), paras, pathName, docName, con);
-                        sql = sql.Replace(item.OuterXml, includeSql);
+                        var xml = GetXmLdoc(pathName, docName);
+                        if (item.Attributes != null)
+                        {
+                            string includeSql = GetSqlByNode(item.Attributes["target"].Value, GetNodesByXml(xml), paras, pathName, docName);
+                            sql = sql.Replace(item.OuterXml, includeSql);
+                        }
                     }
                 }
             }
@@ -227,7 +255,7 @@ namespace ExternalSQL.Net
         /// <returns></returns>
         public static bool AttributesIsNull(this XmlNode node, string attrName)
         {
-            return node.Attributes[attrName] == null || node.Attributes[attrName].Value == "";
+            return node.Attributes != null && (node.Attributes[attrName] == null || node.Attributes[attrName].Value == "");
         }
         /// <summary>
         /// parameter节点中包含了多了parameter时，分别解析
@@ -250,7 +278,8 @@ namespace ExternalSQL.Net
                     if (item == p.Name)
                     {
                         sqlParas.Remove(p.Name);
-                        sql = sql.Replace("$" + item + "$", "'" + p.GetValue(paras) + "'");
+                        sql = sql.Replace("$" + item + "$", p.GetValue(paras) + "");
+                        sql = sql.Replace("#" + item + "#", "'" + p.GetValue(paras) + "'");
                     }
                 }
             }
